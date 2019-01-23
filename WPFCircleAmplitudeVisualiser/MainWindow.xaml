@@ -7,6 +7,11 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <ComboBox Name="cbDevice" Grid.Row="0"></ComboBox>
+        <Canvas Name="mainCanvas" Background="LightGray" Grid.Row="1"></Canvas>
     </Grid>
 </Window>
