@@ -25,10 +25,18 @@ namespace WPFCircleAmplitudeVisualiser
     {
         private DispatcherTimer dispatcherTimer = new DispatcherTimer();
         public const int POINTSCOUNT = 360;
-        private Point[] points = new Point[POINTSCOUNT];
+        public const int BASERADIUS = 25;
+        private PointData[] points = new PointData[POINTSCOUNT];
         private WPFDraw panel;
-        int _trbMulti = 4;
+        int _trbMulti = 10;
         int currentPoint = 0;
+
+        public struct PointData
+        {
+            public double value;
+            public double currentValue;
+            public int degree;
+        }
         public MainWindow()
         {
             InitializeComponent();
@@ -51,22 +59,37 @@ namespace WPFCircleAmplitudeVisualiser
         }
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-            dispatcherTimer.Stop();
-            Point middle = new Point(mainCanvas.ActualWidth / 2, mainCanvas.ActualHeight / 2);
-            double volume = ((MMDevice)(cbDevice.SelectedItem)).AudioMeterInformation.MasterPeakValue * 100 * _trbMulti + 50 * _trbMulti;
+            dispatcherTimer.Stop();          
+            double volume = ((MMDevice)(cbDevice.SelectedItem)).AudioMeterInformation.MasterPeakValue * 100 * _trbMulti + BASERADIUS * _trbMulti;
             currentPoint %= POINTSCOUNT;
-            points[currentPoint++] = PointOnCircle(volume, currentPoint * (360 / POINTSCOUNT), middle);
+            points[0].value = volume;
+            points[0].currentValue = volume;
+            points[0].degree = 0;
+            currentPoint++;
             Paint();
+            for(int i = POINTSCOUNT - 1; i > 0; i--)
+            {
+                points[i] = points[i - 1];
+                points[i].degree++;
+                points[i].currentValue -= ((points[i].value - BASERADIUS * _trbMulti) / POINTSCOUNT);
+            }
             dispatcherTimer.Start();
         }
         private void Paint()
         {
             panel.Clear();
+            Point middle = new Point(mainCanvas.ActualWidth / 2, mainCanvas.ActualHeight / 2);
+            Point circlePoint = PointOnCircle(BASERADIUS * _trbMulti, 359, middle);
+            Point previousPoint = PointOnCircle(points[0].value, points[0].degree, middle);
+            panel.DrawLine((int)previousPoint.X, (int)previousPoint.Y, (int)circlePoint.X, (int)circlePoint.Y, Brushes.Red);
             for (int i = 0; i < POINTSCOUNT; i++)
             {
-                panel.DrawLine((int)points[i].X, (int)points[i].Y, (int)points[(i + 1) % 360].X, (int)points[(i + 1) % 360].Y, Brushes.Blue);
+                circlePoint = PointOnCircle(points[i].currentValue, points[i].degree, middle);
+                panel.DrawLine((int)circlePoint.X, (int)circlePoint.Y, (int)previousPoint.X, (int)previousPoint.Y, Brushes.Blue);
+                previousPoint = circlePoint;
             }
         }
+
         private static Point PointOnCircle(double radius, double angleInDegrees, Point origin)
         {
             // Convert from degrees to radians via multiplication by PI/180        
